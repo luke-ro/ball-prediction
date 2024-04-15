@@ -28,8 +28,9 @@ class Camera:
         self.pos    = [0,0,0] #position relative to car
         self.h_pixels = h_pixels
         self.w_pixels = w_pixels
-        self.aspect = float(w_pixels/h_pixels)
-        self.origin = (-1, 1/self.aspect, 1, -1/self.aspect)
+        self.aspect = float(w_pixels)/h_pixels
+        self.screen = (-1, 1/self.aspect, 1, -1/self.aspect)
+        self.origin = (0,0,0)
 
 # https://omaraflak.medium.com/ray-tracing-from-scratch-in-python-41670e6a96f9
 def sphereIntersect(center, radius, ray_origin, ray_direction):
@@ -45,7 +46,7 @@ def sphereIntersect(center, radius, ray_origin, ray_direction):
 
 # also https://omaraflak.medium.com/ray-tracing-from-scratch-in-python-41670e6a96f9
 def nearestIntersectedObject(t, objects:list[Ball], ray_origin, ray_direction):
-    distances = [sphere_intersect(obj.y[t,0:3], obj.radius, ray_origin, ray_direction) for obj in objects]
+    distances = [sphereIntersect(obj.y[0:3,t], obj.radius, ray_origin, ray_direction) for obj in objects]
     nearest_object = None
     min_distance = np.inf
     for index, distance in enumerate(distances):
@@ -88,20 +89,22 @@ class Environment:
 
     def generateFrames(self):
         #preallocate
-        frames = np.zeros(self.n_steps, self.cam.h_pixels, self.cam.w_pixles, 3)
+        frames = np.zeros([self.n_steps, self.cam.h_pixels, self.cam.w_pixels, 3],np.uint8)
 
         for i,t in enumerate(np.linspace(self.time_span[0], self.time_span[1], self.n_steps)):
-            for j,y in enumerate(np.linspace(self.cam.screen[1],self.cam.screen[3], self.cam.h_pixels)):
+            print(f"Printing frame {i} at time {t}")
+            for j,z in enumerate(np.linspace(self.cam.screen[1],self.cam.screen[3], self.cam.h_pixels)):
                 for k,x in enumerate(np.linspace(self.cam.screen[0],self.cam.screen[2], self.cam.h_pixels)):
-                    pixel = np.array([x,y,0])
+                    pixel = np.array([x,0,z])
                     direction = normalize(pixel - self.cam.origin)
 
-                    nearest_object, min_distance = nearest_intersected_object(i, self.objects, self.car.y[i,0:3]+self.cam.origin, direction)
+                    nearest_object, min_distance = nearestIntersectedObject(i, self.objects, self.car.y[0:3,i]+self.cam.origin, direction)
                     
                     if nearest_object is None:
                         continue
                     
-                    frames[i,j,k,0:3] = 255
+                    print(f"{x},{z}")
+                    frames[i,j,k,0:3] = 254
                     #intersection point:
                     # intersection = self.car.y[i,0:3]+self.cam.origin + min_distance*direction
             plt.imshow(frames[i,:,:])
@@ -153,7 +156,7 @@ def car_dynamics(t,x):
     # acelleration
     dx[4] = -np.sin(x[3])*v/R # *dv?
     dx[5] = np.cos(x[3])*v/R # *dv?
-    print(v)
+    # print(v)
 
     return dx
 
@@ -170,27 +173,28 @@ def plotCarState(t,y):
 
 
 if __name__ == "__main__":
-    t_span = [0,100]
-    t_eval = np.linspace(t_span[0], t_span[1], 1000)
+    t_span = [0,1]
 
     r_ball = 0.1
-    x0_ball = [10,10,r_ball,
-              -.5,-.5,0,
-              0.25,r_ball,0,.025]
+    x0_ball = [3, 0, r_ball,
+              .5, 0, 0,
+              0.25, r_ball, 0, .025]
 
-    x0_car = [0,-1,0,
-              0,
+    x0_car = [0,0,0,
+              0.0,
               1,0,0,
-              0.001,
+              0.0,
               0,.1,0]
 
     car = Car(car_dynamics, x0_car)
     ball = Ball(ball_dynamics, x0_ball)
-    camera = Camera(200,200)
+    camera = Camera(200,300)
 
     env = Environment(car_actor=car, objects=[ball], cam=camera, time_span=t_span, dt=0.1)
 
     env.simulate()
+
+    env.generateFrames()
 
     t = env.getTimeVec()
     plotCarState(t,env.car.y)
