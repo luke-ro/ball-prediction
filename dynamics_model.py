@@ -1,7 +1,13 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from PIL import Image as im
+from PIL import ImageOps
+from datetime import datetime
+import os
+import json
 from typing import Callable
+
 
 g = -9.18
 
@@ -102,13 +108,44 @@ class Environment:
                     
                     if nearest_object is None:
                         continue
+                    intersection = self.car.y[0:3,i]+self.cam.origin + min_distance*direction
                     
-                    print(f"{x},{z}")
-                    frames[i,j,k,0:3] = 254
+                    print(f"{x},{z},{intersection}")
+                    frames[i,j,k] = 254
                     #intersection point:
-                    # intersection = self.car.y[i,0:3]+self.cam.origin + min_distance*direction
-            plt.imshow(frames[i,:,:])
-            plt.show()
+            # plt.imshow(frames[i,:,:])
+            # plt.show()
+        self.frames = frames
+        return frames
+
+    def exportData(self,savedir):
+        today = datetime.now()
+        if today.hour < 12:
+            h = "00"
+        else:
+            h = "12"
+        folder = today.strftime(r'%Y%m%d')+ h + "%02d"%(today.minute,)
+        os.mkdir(savedir+folder)
+
+        to_save = []
+        for i in range(self.n_steps):
+            img = im.fromarray(self.frames[i])
+            img = ImageOps.grayscale(img)
+
+            finame = str(i)+".jpg"
+            img.save(savedir+folder+"\\"+finame)
+
+            data = {"img_file":finame,
+                    "car_pos":self.car.y[0:2,i].tolist(),
+                    "car_vel":self.car.y[4:6,i].tolist(),
+                    "ball_pos":self.objects[0].y[0:2,i].tolist()}
+            to_save.append(data)
+        
+        final = json.dumps(to_save, indent=2)
+        print(to_save)
+        with open(savedir+folder+"\\data.json", "w") as f: 
+            f.write(final)
+        
                     
                     
 
@@ -129,7 +166,13 @@ def ball_dynamics(t,x):
     F_rr = x[9]*g*x[6] # force of rolling resitance acts opposite of motion
     
     dx[0:3] = x[3:6] 
-    dx[3:6] = F_rr * x[3:6]/np.linalg.norm(x[3:6])
+
+    v = np.linalg.norm(x[3:6])
+
+    if v!=0:
+        dx[3:6] = F_rr * x[3:6]/v
+
+
     return dx
 
 def car_dynamics(t,x):
@@ -177,24 +220,25 @@ if __name__ == "__main__":
 
     r_ball = 0.1
     x0_ball = [3, 0, r_ball,
-              .5, 0, 0,
+              .0, 0, 0,
               0.25, r_ball, 0, .025]
 
     x0_car = [0,0,0,
               0.0,
-              1,0,0,
+              0,0,0,
               0.0,
               0,.1,0]
 
     car = Car(car_dynamics, x0_car)
     ball = Ball(ball_dynamics, x0_ball)
-    camera = Camera(200,300)
+    camera = Camera(20,30)
 
     env = Environment(car_actor=car, objects=[ball], cam=camera, time_span=t_span, dt=0.1)
 
     env.simulate()
 
     env.generateFrames()
+    env.exportData("C:\\Users\\luker\\Downloads\\")
 
     t = env.getTimeVec()
     plotCarState(t,env.car.y)
@@ -216,5 +260,4 @@ if __name__ == "__main__":
     # fig,ax = plt.subplots()
     # ax.plot(np.linalg.norm(sol_car.y[4:7,:], axis=0))
 
-    plt.show()
   
