@@ -33,22 +33,19 @@ def car_dynamics(t,x):
              w  # [noise]]
     """
     dx = np.zeros(11)
-
+    v = np.linalg.norm(x[4:7])
     #position
-    dx[0] = np.cos(x[3])*x[4]
-    dx[1] = np.sin(x[3])*x[5]
-
-    #turning radius
-    R = np.linalg.norm(x[0:3])/np.tan(x[7])
+    dx[0] = np.cos(x[3])*v
+    dx[1] = np.sin(x[3])*v
 
     #dtheta
-    dx[3] = x[7]/x[9]
+    R = x[9]/np.tan(x[7]) #turning radius
+    dx[3] = np.linalg.norm(x[4:6])/R
 
-    #velocity
-    F = np.array([0,0,0])
-    R = np.array([[np.cos(dx[3]),-np.sin(dx[3])],
-                  [np.sin(dx[3]), np.cos(dx[3])]])
-    dx[4:6] = R@(F[0:2]+x[4:6])
+    # acelleration
+    dx[4] = -np.sin(x[3])*v # *dv?
+    dx[5] = np.cos(x[3])*v # *dv?
+
     return dx
 
 def plotBallState(t,y):
@@ -62,25 +59,31 @@ def plotCarState(t,y):
 
 
 if __name__ == "__main__":
-    t_span = [0,10]
-    t_eval = np.linspace(0,10,100)
+    t_span = [0,100]
+    t_eval = np.linspace(t_span[0], t_span[1], 1000)
 
     x0_ball = [10,10,0,
               -.5,-.5,0,
               0.25,.1,0,.025]
 
-    x0_car = [0,0,0,
+    x0_car = [0,-1,0,
               0,
-              2,0,0,
-              0,
+              1,0,0,
+              .1,
               0,.1,0]
 
     sol_ball = solve_ivp(ball_dynamics,t_span,x0_ball, t_eval=t_eval)
-    sol_car = solve_ivp(car_dynamics,t_span,x0_car, t_eval=t_eval)
+    sol_car = solve_ivp(car_dynamics,t_span,x0_car, t_eval=t_eval, rtol=1e-6)
 
     # print(sol.y[0:3,:])
     plotBallState(sol_ball.t, sol_ball.y)
     plotBallState(sol_car.t, sol_car.y)
+
+    fig,ax = plt.subplots()
+    ax.plot(sol_car.y[0,:],sol_car.y[1,:])
+    
+    fig,ax = plt.subplots()
+    ax.plot(np.linalg.norm(sol_car.y[4:7,:], axis=0))
 
     plt.show()
   
