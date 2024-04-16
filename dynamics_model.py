@@ -36,7 +36,7 @@ class Camera:
         self.w_pixels = w_pixels
         self.aspect = float(w_pixels)/h_pixels
         self.screen = (-1, 1/self.aspect, 1, -1/self.aspect)
-        self.origin = (0,0,0)
+        self.origin = (-1,0,.1)
 
 # https://omaraflak.medium.com/ray-tracing-from-scratch-in-python-41670e6a96f9
 def sphereIntersect(center, radius, ray_origin, ray_direction):
@@ -100,21 +100,24 @@ class Environment:
         for i,t in enumerate(np.linspace(self.time_span[0], self.time_span[1], self.n_steps)):
             print(f"Printing frame {i} at time {t}")
             for j,z in enumerate(np.linspace(self.cam.screen[1],self.cam.screen[3], self.cam.h_pixels)):
-                for k,x in enumerate(np.linspace(self.cam.screen[0],self.cam.screen[2], self.cam.h_pixels)):
-                    pixel = np.array([x,0,z])
-                    direction = normalize(pixel - self.cam.origin)
+                for k,y in enumerate(np.linspace(self.cam.screen[0],self.cam.screen[2], self.cam.w_pixels)):
+                    pixel = np.array([0,y,z])
+                    orig = self.car.y[0:3,i]+self.cam.origin
+                    direction = normalize(pixel - orig)
+                    print(z,y,direction)
 
-                    nearest_object, min_distance = nearestIntersectedObject(i, self.objects, self.car.y[0:3,i]+self.cam.origin, direction)
+                    nearest_object, min_distance = nearestIntersectedObject(i, self.objects, orig, direction)
                     
                     if nearest_object is None:
                         continue
-                    intersection = self.car.y[0:3,i]+self.cam.origin + min_distance*direction
+                    intersection = orig + min_distance*direction
                     
-                    print(f"{x},{z},{intersection}")
+
+                    print(f"{y},{z},{intersection}")
                     frames[i,j,k] = 254
                     #intersection point:
-            # plt.imshow(frames[i,:,:])
-            # plt.show()
+            plt.imshow(frames[i,:,:])
+            plt.show()
         self.frames = frames
         return frames
 
@@ -216,11 +219,11 @@ def plotCarState(t,y):
 
 
 if __name__ == "__main__":
-    t_span = [0,1]
+    t_span = [0,5]
 
-    r_ball = 0.1
+    r_ball = 0.5
     x0_ball = [3, 0, r_ball,
-              .0, 0, 0,
+              -.5, 0, 0,
               0.25, r_ball, 0, .025]
 
     x0_car = [0,0,0,
@@ -231,7 +234,7 @@ if __name__ == "__main__":
 
     car = Car(car_dynamics, x0_car)
     ball = Ball(ball_dynamics, x0_ball)
-    camera = Camera(20,30)
+    camera = Camera(40,60)
 
     env = Environment(car_actor=car, objects=[ball], cam=camera, time_span=t_span, dt=0.1)
 
