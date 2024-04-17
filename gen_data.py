@@ -6,9 +6,9 @@ import Environment
 if __name__ == "__main__":
     t_span = [0,5]
     dt = 0.2
-    r_ball = 0.5
+    r_ball = 0.25
     x0_ball = [3, 0, r_ball,
-              -1.5, 0, 0,
+              -0.5, .5, 0,
               0.25, r_ball, 0, .025]
 
     x0_car = [0,0,0,
@@ -47,5 +47,6 @@ if __name__ == "__main__":
     
     # fig,ax = plt.subplots()
     # ax.plot(np.linalg.norm(sol_car.y[4:7,:], axis=0))
+    plt.show()
 
   

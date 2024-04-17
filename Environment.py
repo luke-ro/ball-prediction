@@ -69,13 +69,16 @@ class Environment:
 
         return
 
-    def generateFrames(self):
+    def generateFrames(self,n=None):
+        if n is None:
+            n = self.n_steps
+
         #preallocate
-        frames = np.zeros([self.n_steps, self.cam.h_pixels, self.cam.w_pixels, 3],np.uint8)
+        frames = np.zeros([n, self.cam.h_pixels, self.cam.w_pixels, 3],np.uint8)
 
-        self.ball_in_frame = np.zeros(self.n_steps,dtype=bool)
+        self.ball_in_frame = np.zeros(n,dtype=bool)
 
-        for i,t in enumerate(np.linspace(self.time_span[0], self.time_span[1], self.n_steps)):
+        for i,t in enumerate(np.arange(self.time_span[0], self.time_span[0]+self.dt*n, self.dt)):
             print(f"Printing frame {i} at time {t}")
             for j,z in enumerate(np.linspace(self.cam.screen[1],self.cam.screen[3], self.cam.h_pixels)):
                 for k,y in enumerate(np.linspace(self.cam.screen[0],self.cam.screen[2], self.cam.w_pixels)):
