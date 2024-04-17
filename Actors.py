@@ -25,7 +25,8 @@ class Camera:
         self.h_pixels = h_pixels
         self.w_pixels = w_pixels
         self.aspect = float(w_pixels)/h_pixels
-        self.screen = (-1, 1/self.aspect, 1, -1/self.aspect)
+        self.screen_ylim = (1,  -1)
+        self.screen_zlim = (1/self.aspect, -1/self.aspect)
         self.origin = (-1,0,.1)
         
         

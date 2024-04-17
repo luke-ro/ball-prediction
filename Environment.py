@@ -9,7 +9,25 @@ import json
 
 import Actors
 
+from scipy.spatial.transform import Rotation as R
+
 g = -9.81
+
+def R3D(r3,r2,r1):
+    r = R.from_euler('ZYX', [r3, r2, r1], degrees=False)
+    return r.as_matrix()
+
+def T3D(r3,r2,r1,p):
+    R = R3D(r3,r2,r1)
+    T = np.zeros([3,4])
+    T[0:3,0:3] = R
+    T[0:3,3] = p
+    return T
+
+def R2D(ang):
+    R_mat = np.array([[np.cos(ang), -np.sin(ang)],
+                      [np.sin(ang), np.cos(ang)]]) 
+    return R_mat
 
 def normalize(v):
     return v/np.linalg.norm(v)
@@ -80,17 +98,27 @@ class Environment:
 
         for i,t in enumerate(np.arange(self.time_span[0], self.time_span[0]+self.dt*n, self.dt)):
             print(f"Printing frame {i} at time {t}")
-            for j,z in enumerate(np.linspace(self.cam.screen[1],self.cam.screen[3], self.cam.h_pixels)):
-                for k,y in enumerate(np.linspace(self.cam.screen[0],self.cam.screen[2], self.cam.w_pixels)):
-                    pixel = np.array([0,y,z])
-                    orig = self.car.y[0:3,i]+self.cam.origin
+            theta = self.car.y[3,i]
+            R2 = R2D(theta)
+            T3 = T3D(theta,0,0,self.car.y[0:3,i])
+            screen_z = self.cam.screen_zlim
+            screen_xy = np.zeros((2,2))
+            screen_xy[:,0] = (T3@[0,self.cam.screen_ylim[0],0,1])[0:2] 
+            screen_xy[:,1] = (T3@[0,self.cam.screen_ylim[1],0,1])[0:2]
+            for j,z in enumerate(np.linspace(screen_z[0], screen_z[1], self.cam.h_pixels)):
+                xy_points = np.linspace(screen_xy[:,0], screen_xy[:,1], self.cam.w_pixels)
+                for k in range(xy_points.shape[0]):
+                    xy = xy_points[k,:]
+
+                    pixel = np.concatenate((xy,[z]),axis=0)
+                    orig = self.car.y[0:3,i] + (T3@np.concatenate((self.cam.origin,[1]),axis=0))
                     direction = normalize(pixel - orig)
                     # print(z,y,direction)
 
                     nearest_object, min_distance = nearestIntersectedObject(i, self.objects, orig, direction)
-                    
                     if nearest_object is None:
                         continue
+                    # print(min_distance)
                     intersection = orig + min_distance*direction
                     self.ball_in_frame[i] = True
 
@@ -102,29 +130,38 @@ class Environment:
         self.frames = frames
         return frames
 
-    def exportData(self,savedir):
-        today = datetime.now()
-        if today.hour < 12:
-            h = "00"
+    def exportData(self,savedir,foldername=None):
+        
+        if foldername is None:
+            today = datetime.now()
+            if today.hour < 12:
+                h = "00"
+            else:
+                h = "12"
+            folder = today.strftime(r'%Y%m%d')+ h + "%02d"%(today.minute,)+"\\"
         else:
-            h = "12"
-        folder = today.strftime(r'%Y%m%d')+ h + "%02d"%(today.minute,)
+            folder = foldername
+
         os.mkdir(savedir+folder)
 
-        to_save = []
-        for i in range(self.n_steps):
+        to_save = {}
+        n = self.frames.shape[0]
+        for i in range(n):
             img = im.fromarray(self.frames[i])
             img = ImageOps.grayscale(img)
 
             finame = str(i)+".jpg"
-            img.save(savedir+folder+"\\"+finame)
+            img.save(savedir+folder+finame)
 
             data = {"img_file":finame,
                     "car_pos":self.car.y[0:2,i].tolist(),
                     "car_vel":self.car.y[4:6,i].tolist(),
-                    "ball_pos":self.objects[0].y[0:2,i].tolist(),
                     "ball_in_frame":int(self.ball_in_frame[i])}
-            to_save.append(data)
+
+            to_save[str(i)] = data
+        
+        to_save["ball_trj"] = {"pos": self.objects[0].y[0:2,n:].tolist(),
+                               "vel": self.objects[0].y[3:5,n:].tolist()}
         
         final = json.dumps(to_save, indent=2)
         print(to_save)
