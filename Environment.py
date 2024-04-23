@@ -105,13 +105,15 @@ class Environment:
             screen_xy = np.zeros((2,2))
             screen_xy[:,0] = (T3@[0,self.cam.screen_ylim[0],0,1])[0:2] 
             screen_xy[:,1] = (T3@[0,self.cam.screen_ylim[1],0,1])[0:2]
+
+            xy_points = np.linspace(screen_xy[:,0], screen_xy[:,1], self.cam.w_pixels)
+            orig = (T3@np.concatenate((self.cam.origin,[1]),axis=0))
+            
             for j,z in enumerate(np.linspace(screen_z[0], screen_z[1], self.cam.h_pixels)):
-                xy_points = np.linspace(screen_xy[:,0], screen_xy[:,1], self.cam.w_pixels)
                 for k in range(xy_points.shape[0]):
                     xy = xy_points[k,:]
 
                     pixel = np.concatenate((xy,[z]),axis=0)
-                    orig = self.car.y[0:3,i] + (T3@np.concatenate((self.cam.origin,[1]),axis=0))
                     direction = normalize(pixel - orig)
                     # print(z,y,direction)
 
