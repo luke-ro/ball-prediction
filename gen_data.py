@@ -13,8 +13,8 @@ import Environment
 # BALL_dX_MAX = 1
 # BALL_dY_MIN = -1
 # BALL_dY_MAX = 1
-BALL_X_MIN = 4
-BALL_X_MAX = 2
+BALL_X_MIN = 3
+BALL_X_MAX = 1
 BALL_Y_MIN = -1
 BALL_Y_MAX = 1
 BALL_dX_MIN = -1
@@ -23,11 +23,11 @@ BALL_dY_MIN = -1
 BALL_dY_MAX = 1
 
 CAR_V_MIN_BODY = 0
-CAR_V_MAX_BODY = 1
+CAR_V_MAX_BODY = 0
 CAR_THETA_MIN = 0
 CAR_THETA_MAX = 0
-CAR_TURN_ANGLE_MIN = 0
-CAR_TURN_ANGLE_MAX = 0
+CAR_TURN_ANGLE_MIN = -3.14/24
+CAR_TURN_ANGLE_MAX = 3.14/24
 
 WHEEL_BASE = 0.1
 
@@ -40,6 +40,7 @@ if __name__ == "__main__":
     RADIUS_BALL = 0.25
 
     for i in range(10000):
+        print(f"i={i}")
         x0_ball = [np.random.uniform(BALL_X_MIN,BALL_X_MAX), np.random.uniform(BALL_Y_MIN,BALL_Y_MAX), RADIUS_BALL,
                 np.random.uniform(BALL_dX_MIN,BALL_dX_MAX), np.random.uniform(BALL_dY_MIN,BALL_dY_MAX), 0,
                 0.25, RADIUS_BALL, 0, .025]
@@ -54,7 +55,7 @@ if __name__ == "__main__":
 
         car = Actors.Car(Actors.car_dynamics, x0_car)
         ball = Actors.Ball(Actors.ball_dynamics, x0_ball)
-        camera = Actors.Camera(40,60)
+        camera = Actors.Camera(20,30)
 
         env = Environment.Environment(car_actor=car, objects=[ball], cam=camera, time_span=t_span, dt=dt)
 
