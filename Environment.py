@@ -65,7 +65,7 @@ class Environment:
         self.cam       = cam
 
         self.n_steps = int(np.ceil((time_span[1]-time_span[0])/dt))
-        print("n_steps",self.n_steps)
+        # print("n_steps",self.n_steps)
         # make the timespan be a multiple of dt 
         self.time_span[1] = time_span[0] + dt*self.n_steps
         self.t_eval = np.linspace(self.time_span[0], self.time_span[1], self.n_steps)
@@ -97,7 +97,7 @@ class Environment:
         self.ball_in_frame = np.zeros(n,dtype=bool)
 
         for i,t in enumerate(np.arange(self.time_span[0], self.time_span[0]+self.dt*n, self.dt)):
-            print(f"Printing frame {i} at time {t}")
+            # print(f"Printing frame {i} at time {t}")
             theta = self.car.y[3,i]
             R2 = R2D(theta)
             T3 = T3D(theta,0,0,self.car.y[0:3,i])
@@ -105,13 +105,15 @@ class Environment:
             screen_xy = np.zeros((2,2))
             screen_xy[:,0] = (T3@[0,self.cam.screen_ylim[0],0,1])[0:2] 
             screen_xy[:,1] = (T3@[0,self.cam.screen_ylim[1],0,1])[0:2]
+
+            xy_points = np.linspace(screen_xy[:,0], screen_xy[:,1], self.cam.w_pixels)
+            orig = (T3@np.concatenate((self.cam.origin,[1]),axis=0))
+
             for j,z in enumerate(np.linspace(screen_z[0], screen_z[1], self.cam.h_pixels)):
-                xy_points = np.linspace(screen_xy[:,0], screen_xy[:,1], self.cam.w_pixels)
                 for k in range(xy_points.shape[0]):
                     xy = xy_points[k,:]
 
                     pixel = np.concatenate((xy,[z]),axis=0)
-                    orig = self.car.y[0:3,i] + (T3@np.concatenate((self.cam.origin,[1]),axis=0))
                     direction = normalize(pixel - orig)
                     # print(z,y,direction)
 
@@ -156,6 +158,7 @@ class Environment:
             data = {"img_file":finame,
                     "car_pos":self.car.y[0:2,i].tolist(),
                     "car_vel":self.car.y[4:6,i].tolist(),
+                    "cat_theta":float(self.car.y[3,i]),
                     "ball_in_frame":int(self.ball_in_frame[i])}
 
             to_save[str(i)] = data
@@ -164,6 +167,6 @@ class Environment:
                                "vel": self.objects[0].y[3:5,n:].tolist()}
         
         final = json.dumps(to_save, indent=2)
-        print(to_save)
+        # print(to_save)
         with open(savedir+folder+"\\data.json", "w") as f: 
             f.write(final)

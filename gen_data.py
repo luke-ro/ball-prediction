@@ -13,19 +13,21 @@ import Environment
 # BALL_dX_MAX = 1
 # BALL_dY_MIN = -1
 # BALL_dY_MAX = 1
-BALL_X_MIN = 2
+BALL_X_MIN = 4
 BALL_X_MAX = 2
-BALL_Y_MIN = 0
-BALL_Y_MAX = 0
-BALL_dX_MIN = -2
+BALL_Y_MIN = -1
+BALL_Y_MAX = 1
+BALL_dX_MIN = -1
 BALL_dX_MAX = 0
-BALL_dY_MIN = 0
-BALL_dY_MAX = 0
+BALL_dY_MIN = -1
+BALL_dY_MAX = 1
 
 CAR_V_MIN_BODY = 0
-CAR_V_MAX_BODY = 0
-CAR_THETA_MIN = -3.14/6.0
-CAR_THETA_MAX = -3.14/6.0
+CAR_V_MAX_BODY = 1
+CAR_THETA_MIN = 0
+CAR_THETA_MAX = 0
+CAR_TURN_ANGLE_MIN = 0
+CAR_TURN_ANGLE_MAX = 0
 
 WHEEL_BASE = 0.1
 
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     dt = 0.2
     RADIUS_BALL = 0.25
 
-    for i in range(10):
+    for i in range(10000):
         x0_ball = [np.random.uniform(BALL_X_MIN,BALL_X_MAX), np.random.uniform(BALL_Y_MIN,BALL_Y_MAX), RADIUS_BALL,
                 np.random.uniform(BALL_dX_MIN,BALL_dX_MAX), np.random.uniform(BALL_dY_MIN,BALL_dY_MAX), 0,
                 0.25, RADIUS_BALL, 0, .025]
@@ -47,7 +49,7 @@ if __name__ == "__main__":
         x0_car = [0,0,0,
                 car_ang,
                 car_v[0],car_v[1],0,
-                0.0,
+                np.random.uniform(CAR_TURN_ANGLE_MIN,CAR_TURN_ANGLE_MAX),
                 0,WHEEL_BASE,0]
 
         car = Actors.Car(Actors.car_dynamics, x0_car)
